@@ -16,6 +16,9 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
+import frc.robot.subsystems.swervedrive.Vision;
+import org.photonvision.targeting.PhotonTrackedTarget;
+
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.swervedrive.CommandSwerveDrivetrain;
 
@@ -27,6 +30,12 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+
+    private final SwerveRequest.FieldCentricFacingAngle driveFacing =
+        new SwerveRequest.FieldCentricFacingAngle()
+            .withDeadband(MaxSpeed * 0.1)
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+            
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
@@ -34,6 +43,8 @@ public class RobotContainer {
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
+    private final Vision vision = new Vision();
+    
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
     public RobotContainer() {
@@ -43,14 +54,46 @@ public class RobotContainer {
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
+        // drivetrain.setDefaultCommand(
+        //     // Drivetrain will execute this command periodically
+        //     drivetrain.applyRequest(() ->
+        //         drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+        //             .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+        //             .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+        //     )
+        // );
         drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
+            drivetrain.applyRequest(() -> {
+
+                double xSpeed = -joystick.getLeftY() * MaxSpeed;
+                double ySpeed = -joystick.getLeftX() * MaxSpeed;
+
+                PhotonTrackedTarget target = vision.getFrontTarget();
+
+                if (target != null && joystick.getRightTriggerAxis() > 0.5) {
+
+                    double yaw = target.getYaw(); // degrees
+
+                    Rotation2d currentHeading = drivetrain.getState().Pose.getRotation();
+
+                    Rotation2d desiredHeading =
+                            currentHeading.minus(Rotation2d.fromDegrees(yaw));
+
+                    return driveFacing
+                            .withVelocityX(xSpeed)
+                            .withVelocityY(ySpeed)
+                            .withTargetDirection(desiredHeading);
+
+                } else {
+                    // Normal joystick rotation if no tag
+                    return drive
+                            .withVelocityX(xSpeed)
+                            .withVelocityY(ySpeed)
+                            .withRotationalRate(-joystick.getRightX() * MaxAngularRate);
+                }
+            })
         );
+
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
