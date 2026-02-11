@@ -1,40 +1,36 @@
 package frc.robot.subsystems.swervedrive;
 
-import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-
 import org.photonvision.PhotonCamera;
-// import org.photonvision.proto.Photon;
 import org.photonvision.targeting.PhotonPipelineResult;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
-public class Vision implements Subsystem {
+public class Vision extends SubsystemBase {
     private PhotonCamera cFront;
     private PhotonCamera cBack;
 
-    private Vision() {
+    public Vision() {
         cFront = new PhotonCamera(Constants.Vision.kDefaultFrontCameraName);
         cBack = new PhotonCamera(Constants.Vision.kDefaultBackCameraName);
     }
 
-    private Vision(String front, String back) {
-        cFront = new PhotonCamera(front.isEmpty() ? Constants.Vision.kDefaultFrontCameraName : front);
-        cBack = new PhotonCamera(back.isEmpty() ? Constants.Vision.kDefaultBackCameraName : back);
+    public PhotonTrackedTarget getFrontTarget() {
+        PhotonPipelineResult result = cFront.getLatestResult();
+        if (result.hasTargets()) {
+            return result.getBestTarget();
+        } else {
+            return null;
+        }
     }
 
-    public PhotonCamera getFront() {
-        return cFront;
-    }
-
-    public PhotonCamera getBack() {
-        return cBack;
-    }
-
-    public PhotonPipelineResult getResult(PhotonCamera c) {
-        return c.getLatestResult();
-    }
-
-    public boolean IsLookingAtApriltag(PhotonPipelineResult res) {
-        return res.hasTargets();
+    public PhotonTrackedTarget getBackTarget() {
+        PhotonPipelineResult result = cBack.getLatestResult();
+        if (result.hasTargets()) {
+            return result.getBestTarget();
+        } else {
+            return null;
+        }
     }
 
 }
