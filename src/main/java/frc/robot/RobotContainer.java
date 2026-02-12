@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
+import frc.robot.commands.FieldRelativeHeadingDrive;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
@@ -35,6 +36,17 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+
+    // Heading control command for test mode
+    private final FieldRelativeHeadingDrive headingDrive = new FieldRelativeHeadingDrive(
+        drivetrain,
+        () -> joystick.getLeftX(),
+        () -> joystick.getLeftY(),
+        () -> joystick.getRightX(),
+        () -> joystick.getRightY(),
+        MaxSpeed,
+        MaxAngularRate
+    );
 
     public RobotContainer() {
         configureBindings();
@@ -58,6 +70,10 @@ public class RobotContainer {
         RobotModeTriggers.disabled().whileTrue(
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
+
+        // TEST MODE: Use heading control drive
+        // When in test mode, the heading drive command will run
+        RobotModeTriggers.test().whileTrue(headingDrive);
 
         joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
         joystick.b().whileTrue(drivetrain.applyRequest(() ->
