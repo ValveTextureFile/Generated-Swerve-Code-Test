@@ -28,8 +28,8 @@ public class Indexer implements Subsystem {
     public Command runIndexer() {
         return runOnce(
             () -> {
-                MainIndexer.set(SubsystemMotors.Indexer.kMainIndexerSpeed);
-                Feeder.set(SubsystemMotors.Indexer.kFeederSpeed);
+                MainIndexer.set(Constants.MotorPIDs.Indexer.kMainIndexerSpeed);
+                Feeder.set(Constants.MotorPIDs.Indexer.kFeederSpeed);
             }
         );
     }
@@ -59,7 +59,7 @@ public class Indexer implements Subsystem {
     public Command feedToShotty() {
         return runOnce(
             () -> {
-                Feeder.set(-SubsystemMotors.Indexer.kFeederSpeed);
+                Feeder.set(-Constants.MotorPIDs.Indexer.kFeederSpeed);
             }
         );
     }

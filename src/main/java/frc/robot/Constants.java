@@ -40,12 +40,14 @@ public class Constants {
      * Personal types
      */
     public static enum Directions {
-        kUp, kDown, kIn, kOut, kStop,
+        kUp, kDown, kCenter, kIn, kOut, kStop,
     }
 
     /**
      * All motors for our subsystems
-     */ 
+     *
+     * NOTE: Only hardware IDs remain here. Speeds/positions are centralized under MotorPIDs.
+     */
     public static class SubsystemMotors {
 
         /**
@@ -57,14 +59,10 @@ public class Constants {
              */
             public static final int kFeeder_Kraken              = 0;
 
-            public static final double kFeederSpeed             =  .7; 
-
             /**
              * The literal Aldi's cashier station conveyor belt
              */
             public static final int kMainIndexer_Kraken         = 1;
-
-            public static final double kMainIndexerSpeed        = .7;
         }
 
         /**
@@ -75,13 +73,11 @@ public class Constants {
              * In and out burger
              */
             public static final int kIntakeIO_NeoVortex         = 2;
-            public static final double kIntakeIOSpeed           = .4;
 
             /**
              * Pivot the thing
              */
             public static final int kIntakeUpDown_Kraken       = 3;
-            public static final double kIntakeUpDownSpeed      = .4;
         }
 
         /**
@@ -98,22 +94,9 @@ public class Constants {
             public static final int kShooterOut2_Kraken         = 5;
 
             /**
-             * Final speed for both of the motors
-             */
-            public static final double kShooterOutSpeed_RPM         = 4000;
-
-            public static class ShooterPID {
-                public static final double kP = .1;
-                public static final double kI = .0;
-                public static final double kD = .0; 
-            }
-
-            /**
              * Shooter pivot
              */
             public static final int kShooterPivot_Kraken        = 6;
-
-            public static final double kShooterPivotSpeed       = .4;
         }
 
         /**
@@ -123,6 +106,85 @@ public class Constants {
         public static class Climber {
             public static final int kClimber1_Kraken        = 7;
             public static final int kClimber2_Kraken        = 8;
+        }
+    }
+
+    /**
+     * Centralized motor PID tunings moved out of SubsystemMotors.
+     * Maintains the same PID class names.
+     *
+     * All speed and position related constants live here.
+     */
+    public static class MotorPIDs {
+        public static class IntakePivot {
+            public static final double kP = .0001;
+            public static final double kI = .0;
+            public static final double kD = .0;
+
+            public static class Positions {
+                public static final double kUp = 0;
+                public static final double kDown = 90;
+            }
+        }
+
+        public static class Shooter {
+            public static final double kP = .1;
+            public static final double kI = .0;
+            public static final double kD = .0;
+
+            /**
+             * Shooter speed in RPM. Converted to RPS for runtime use below.
+             */
+            public static final double kShooterOutSpeed_RPM = 4000;
+
+            /**
+             * Pivot speed for shooter pivot motor (unitless scalar).
+             */
+            public static final double kShooterPivotSpeed = .4;
+
+            public static class Speeds {
+                public static final double kShooterOut_S1_RPS = RPMtoRPS(Shooter.kShooterOutSpeed_RPM);
+            }
+        }
+
+        public static class ShooterPivot {
+            public static final double kP = .0001;
+            public static final double kI = .0;
+            public static final double kD = .0;
+
+            public static class Positions {
+                public static final double kUp = 0;
+                public static final double kCenter = 45;
+                public static final double kDown = 90;
+            }
+        }
+
+        public static class Intake {
+            /**
+             * Scalar speed for the intake in/out motor.
+             */
+            public static final double kIntakeIOSpeed = .4;
+
+            /**
+             * Scalar speed for the intake pivot motor.
+             */
+            public static final double kIntakeUpDownSpeed = .4;
+        }
+
+        public static class Indexer {
+            /**
+             * Scalar speed for feeder wheel.
+             */
+            public static final double kFeederSpeed = .7;
+
+            /**
+             * Scalar speed for the main indexer conveyor.
+             */
+            public static final double kMainIndexerSpeed = .7;
+        }
+
+        public static class Climber {
+            // Climber tuning placeholders (if/when needed)
         }
     }
 }
