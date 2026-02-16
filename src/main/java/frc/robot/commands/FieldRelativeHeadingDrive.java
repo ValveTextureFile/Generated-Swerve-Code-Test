@@ -66,7 +66,6 @@ public class FieldRelativeHeadingDrive extends Command {
         this.maxAngularRate = maxAngularRate;
         
         // Create PID controller for heading
-        // Tune these values for your robot!
         headingController = new PIDController(5.0, 0.0, 0.1);
         headingController.enableContinuousInput(-Math.PI, Math.PI);
         headingController.setTolerance(0.02); // ~1 degree tolerance
