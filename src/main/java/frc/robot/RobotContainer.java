@@ -71,9 +71,7 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        // TEST MODE: Use heading control drive
-        // When in test mode, the heading drive command will run
-        RobotModeTriggers.test().whileTrue(headingDrive);
+        RobotModeTriggers.teleop().whileTrue(headingDrive);
 
         joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
         joystick.b().whileTrue(drivetrain.applyRequest(() ->
