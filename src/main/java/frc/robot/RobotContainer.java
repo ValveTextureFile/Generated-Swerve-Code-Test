@@ -10,6 +10,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -21,8 +22,10 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class RobotContainer {
-    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
+                                                                                        // speed
+    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
+                                                                                      // max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -33,22 +36,28 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
+    private final CommandXboxController m_controller1 = new CommandXboxController(
+            Constants.DriverStation.Controllers.kYanny);
+    private final CommandXboxController m_controller2 = new CommandXboxController(
+            Constants.DriverStation.Controllers.kLaurel);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
-    // Heading control command for test mode
+    // Heading control command
     private final FieldRelativeHeadingDrive headingDrive = new FieldRelativeHeadingDrive(
-        drivetrain,
-        () -> joystick.getLeftX(),
-        () -> joystick.getLeftY(),
-        () -> joystick.getRightX(),
-        () -> joystick.getRightY(),
-        MaxSpeed,
-        MaxAngularRate
-    );
+            drivetrain,
+            () -> m_controller1.getLeftX(),
+            () -> m_controller1.getLeftY(),
+            () -> m_controller1.getRightX(),
+            () -> m_controller1.getRightY(),
+            MaxSpeed,
+            MaxAngularRate);
 
     public RobotContainer() {
+        if ((!m_controller1.isConnected() || !m_controller2.isConnected()) && DriverStation.isTest())
+            throw new RuntimeException("Fatal::RobotContainer:{ Both driver controllers are not connected. They must be connected at RobotInit runtime.");
+        if ((!m_controller1.isConnected() || !m_controller2.isConnected()) && (!DriverStation.isTest() && DriverStation.isTeleop()))
+            DriverStation.reportError("Both driver controllers are not connected. They must be connected at RobotInit runtime.", true); 
         configureBindings();
     }
 
@@ -56,37 +65,36 @@ public class RobotContainer {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
-        );
+                // Drivetrain will execute this command periodically
+                drivetrain.applyRequest(() -> drive.withVelocityX(-m_controller1.getLeftY() * MaxSpeed) // Drive forward
+                                                                                                        // with negative
+                                                                                                        // Y (forward)
+                        .withVelocityY(-m_controller1.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                        .withRotationalRate(-m_controller1.getRightX() * MaxAngularRate) // Drive counterclockwise with
+                                                                                         // negative X (left)
+                ));
 
         // Idle while the robot is disabled. This ensures the configured
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
-            drivetrain.applyRequest(() -> idle).ignoringDisable(true)
-        );
+                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
         RobotModeTriggers.teleop().whileTrue(headingDrive);
 
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        ));
+        m_controller1.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        m_controller1.b().whileTrue(drivetrain.applyRequest(
+                () -> point.withModuleDirection(new Rotation2d(-m_controller1.getLeftY(), -m_controller1.getLeftX()))));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        m_controller1.back().and(m_controller1.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+        m_controller1.back().and(m_controller1.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        m_controller1.start().and(m_controller1.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+        m_controller1.start().and(m_controller1.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
         // Reset the field-centric heading on left bumper press.
-        joystick.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+        m_controller1.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
@@ -95,18 +103,15 @@ public class RobotContainer {
         // Simple drive forward auton
         final var idle = new SwerveRequest.Idle();
         return Commands.sequence(
-            // Reset our field centric heading to match the robot
-            // facing away from our alliance station wall (0 deg).
-            drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
-            // Then slowly drive forward (away from us) for 5 seconds.
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(0.5)
-                    .withVelocityY(0)
-                    .withRotationalRate(0)
-            )
-            .withTimeout(5.0),
-            // Finally idle for the rest of auton
-            drivetrain.applyRequest(() -> idle)
-        );
+                // Reset our field centric heading to match the robot
+                // facing away from our alliance station wall (0 deg).
+                drivetrain.runOnce(() -> drivetrain.seedFieldCentric(Rotation2d.kZero)),
+                // Then slowly drive forward (away from us) for 5 seconds.
+                drivetrain.applyRequest(() -> drive.withVelocityX(0.5)
+                        .withVelocityY(0)
+                        .withRotationalRate(0))
+                        .withTimeout(5.0),
+                // Finally idle for the rest of auton
+                drivetrain.applyRequest(() -> idle));
     }
 }

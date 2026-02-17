@@ -6,6 +6,15 @@ public final class Constants {
     private Constants() {
     }
 
+    public static final class DriverStation {
+        public static final class Controllers {
+            public static final int kYanny  = 0;
+            public static final int kLaurel = 1;
+        }
+
+        
+    }
+
     /**
      * Standard RIO canbus
      */
