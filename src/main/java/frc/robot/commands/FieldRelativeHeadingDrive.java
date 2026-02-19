@@ -65,7 +65,7 @@ public class FieldRelativeHeadingDrive extends Command {
         this.maxAngularRate = maxAngularRate;
         
         // Create PID controller for heading
-        headingController = new PIDController(5.0, 0.0, 0.1);
+        headingController = new PIDController(6.0, 0.0, 0.3);
         headingController.enableContinuousInput(-Math.PI, Math.PI);
         headingController.setTolerance(0.02); // ~1 degree tolerance
         
